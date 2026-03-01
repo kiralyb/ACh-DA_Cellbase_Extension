@@ -2,7 +2,7 @@
 Matlab analyses for cholinergic and dopaminergic single unit and fiber photometry recordings
 
 ## Description
-This repository contains MATLAB code for data analysis on the interactions and coded signal of the cholinergic and dopaminergic systems during associative learning. The figures and supplementary figures of 'Cholinergic–dopaminergic interplay underlies prediction error broadcasting' by Király et al. can be produced with the MAIN_ACH_DA function relying on three datasets (in CELLBASE data format see https://github.com/hangyabalazs/CellBase) recorded from mice performing an auditory go/no-go task:
+This repository contains MATLAB code for data analysis on the interactions and coded signal of the cholinergic and dopaminergic systems during associative learning. The figures and supplementary figures of 'Cholinergic–dopaminergic interplay underlies prediction error broadcasting' by Király et al. can be produced with the MAIN_ACH_DA function relying on three datasets (in CELLBASE data format, see https://github.com/hangyabalazs/CellBase) recorded from mice performing an auditory go/no-go task:
 
   - Fiber photometry recordings of acetylcholine (ACh) and dopamine (DA) release from the basolateral amygdala (BLA) and the ventral stiatum (VS).
 
@@ -10,7 +10,7 @@ This repository contains MATLAB code for data analysis on the interactions and c
 
   - Fiber photometry recordings of ACh and DA release from the BLA and the VS during the chemogenetic supression of BFCNs.
 
-Data 
+Data can be preprocessed with preproc_ACh_DA.m.
 ## Content
 
 - .m files for data analysis
