@@ -1,12 +1,9 @@
 function populationclust_elbow(area)
-load(['L:\_CellBases\ACh_DA_Cellbase\Population_maps\ALL_20220816\',area,'_a\DATA.mat'])
-Zpsth = sortedZpsth;
+load(['L:\_CellBases\ACh_DA_Cellbase\Population_maps\',area,'_Matrix.mat'])
 g.baselinelength=g.baselinelength/g.dt;
 margin=g.sigma*3;
 time=g.window(1):g.dt:g.window(2);
-time_m=g.window(1)-margin:g.dt:g.window(2)+margin; %plotted time window + margin for smoothing
 time_plot=g.pwindow(1):g.dt:g.pwindow(2); % plotted time window
-time_calc=g.window(1)-g.maxtimediff-margin:g.dt:g.window(2)+g.maxtimediff+margin; % extended time window for calculation
 for partnum=1:length(g.ClusterPartitions)
     ctime=g.cwindow(partnum,1):g.dt:g.cwindow(partnum,2); % time window considered for clustering
     [~,c1]=(min(abs(time-ctime(1))));
@@ -17,7 +14,7 @@ PCA2=[];
 VAR=[];
 figure; hold on;
 for f=1:length(g.ClusterPartitions)
-if g.norm_method=='Z-score'
+
 [~,PCA1,~,~,VAR1]=pca(((squeeze(Zpsth(:,f,cinx{f}))))); % calculate principal copmponents of the Z-scored psth in the clustering time window
 plot(0:length(VAR1),[0;cumsum(VAR1)])
 xlim([0,10])
@@ -26,14 +23,9 @@ ylabel('Explained Variance')
 xlabel('# of PCs')
 setmyplot_balazs
 line([0,length(VAR1)],[70,70],'Color','r')
-%PCA1=pca(((squeeze(Zpsth(:,f,cinx)))')); % calculate principal copmponents of the Z-scored psth in the clustering time window
-elseif g.norm_method=='auROC'
-PCA1=pca(((squeeze(auROC(:,f,floor(cinx{f}(1)/g.ROCWindow):floor(cinx{f}(end)/g.ROCWindow))))')); % calculate principal copmponents of the auROC in the clustering time window
-end
-%PCA2(:,((f-1)*g.PCA_dim+1):((f-1)*g.PCA_dim+1)+(g.PCA_dim-1))=PCA1(:,1:g.PCA_dim); % take the 1st x=PCA_dim principal components
 PCA2=[PCA2,PCA1(:,1:g.PCA_dim(f))]; % take the 1st x=PCA_dim principal components
 VAR=[VAR;VAR1(1:g.PCA_dim(f))]; % take the 1st x=PCA_dim principal components
-end
+
 
 % Total variance (around global mean)
 grandMean = mean(PCA2);
@@ -77,6 +69,14 @@ for j=1:g.ClusterNum
      TEMP(Clusters==rule(j))=j;
 end
 scatter3(PCA2(:,1),PCA2(:,2),PCA2(:,3),50,TEMP*100,'.'); % 3D PCA cluster plot
+
+[B,inx]=sortrows([TEMP,PCA2(:,3)]); %inx: order of the sorted cells (original index)
+%clusternum=histc(Clusters,1:g.ClusterNum); %number of cells in each cluster
+clusterborders=find(diff(Clusters(inx))~=0);
+
+sortedZpsth=Zpsth(inx,:,:);
+sortedCellIDS=IDS(inx);
+
 
 cellnum = size(sortedZpsth,1);
 partnum = 2;

@@ -363,10 +363,6 @@ path = [getpref('cellbase','datapath'),'CCG_final\'];
 
 % Crosscorrelograms(CCG)
 % Fig 2g BFCN-DA CCGs
-mkdir(path);
-if ~exist([path,'ALL\CCG_matrices.mat'],'file')
-    ccg(crosspairs,0.5,'issave',false,'resdir',[path,'All'],'segfilter','@stim_excl_dual','filterinput',{'light_activation_duration',[0 1],'margins',[0,0]})
-end
 CCG = CCG_normalizer([path,'ALL\CCG_matrices.mat']);
 figure
 subplot(1,2,1)
@@ -375,20 +371,11 @@ subplot(1,2,2)
 ccg_plot(CCG(ie_pairs == 1,:))
 
 % Fig 2h - event restricted BFCN-DA CCGs 
-if ~exist([path,'Cue\CCG_matrices.mat'],'file')
-    ccg(crosspairs,0.25,'issave',false,'resdir',[path,'Cue'],'segfilter','@cue_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
-    ccg(crosspairs,0.25,'issave',false,'resdir',[path,'Hit'],'segfilter','@Hit_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
-    ccg(crosspairs,0.25,'issave',false,'resdir',[path,'FA'],'segfilter','@FA_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
-end
 AVG_CCG_plot(path,ie_pairs)
 
 % Fig 3a & S9a-b - CCG matrix of cell clusters
 HDB_Clust = abs(getvalue('HDB_Cluster_num'));
 VTA_Clust = abs(getvalue('VTA_Cluster_num'));
-if ~exist([path,'ISI\CCG_matrices.mat'],'file')
-    ccg(CELLIDLIST(~isnan(HDB_Clust)|~isnan(VTA_Clust)),0.5,'issave',false,'resdir',[path,'ISI'],...
-        'segfilter','@stimfb_excl_dual','filterinput',{'light_activation_duration',[0 1],'feedback_duration',[-0.6 0.6],'margins',[0 0]})
-end
 CCG_matrix_plotter(path,HDB_Clust,VTA_Clust);
 CCG_matrix_plotter(path,HDB_Clust,HDB_Clust);
 CCG_matrix_plotter(path,VTA_Clust,VTA_Clust);
