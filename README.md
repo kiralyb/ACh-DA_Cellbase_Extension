@@ -17,11 +17,12 @@ This repository contains MATLAB code for data analysis on the interaction of the
 
 ## Installation
 
-Move the .m files on your MATLAB path (should take around a few seconds). No further installation is needed, but Cellbase needs to be initilized (initcb.m). 
+Move the .m files on your MATLAB path (should take around a few seconds). No further installation is needed, but Cellbase needs to be initilized (run initcb.m or mountcb.m). 
 
 ## Dependencies
 
 This code is an extension to CELLBASE (https://github.com/hangyabalazs/CellBase).
+- MatlabR2021a (Signal Processing Toolbox, Statistics and Machine Learning Toolbox, System Identification Toolbox)
 
 ## System requirements
 The code was tested on the following configuration:
