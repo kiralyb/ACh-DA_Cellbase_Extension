@@ -21,7 +21,7 @@ Move the .m files on your MATLAB path (should take around a few seconds). No fur
 
 ## Dependencies
 
-This code is an extension to CELLBASE (https://github.com/hangyabalazs/CellBase).
+This code is an extension to CELLBASE (https://github.com/hangyabalazs/CellBase) and some parts use MClust3.5 (https://github.com/adredish/MClust-Spike-Sorting-Toolbox).
 - MatlabR2021a (Signal Processing Toolbox, Statistics and Machine Learning Toolbox, System Identification Toolbox)
 
 ## System requirements
