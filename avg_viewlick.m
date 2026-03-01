@@ -17,7 +17,6 @@ for ratindex = 1:length(RATs)
     MPSTHs(ratindex,:,:) = nanmean(RatPSTH);           
 end
 
-figure
 for part = 1:4
         errorshade(linspace(-2,3,501),squeeze(mean(MPSTHs(:,part,1:10:end)))',squeeze(std(MPSTHs(:,part,1:10:end)))'/sqrt(length(RATs)),'LineColor',Colors(part,1:3),'ShadeColor',Colors(part,1:3)) 
 end

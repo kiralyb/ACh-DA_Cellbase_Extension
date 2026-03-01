@@ -2,8 +2,8 @@ function Photometry_GrandAVG(partition,trigger,signal,isstat)
 cellbasepath = getpref('cellbase','datapath');
 sr = 12048;
 win = [-2,3];
-Color = {[0,1,0],[1,0,0],[0,0.5,0],[0.5,0,0]};
-labels = {'Constant go','New go','Constant no-go','New no-go'};
+
+
 %if %exist()
 load([cellbasepath,partition,'_',trigger,'_',signal,'FM.mat'])
 %else
@@ -13,6 +13,14 @@ figure
 subplot(1,3,1:2)
 FM_P = FM(:,:,1:50:end);
 parts = 1:size(FM,2);
+if length(parts) == 1
+    labels = {partition};
+    Color = {[1,0.5,0]};
+else
+    labels = {'Constant go','New go','Constant no-go','New no-go'};
+    Color = {[0,1,0],[1,0,0],[0,0.5,0],[0.5,0,0]};
+end
+
 for k = parts
     errorshade(linspace(-2,3,length(FM_P)),squeeze(nanmean(FM_P(:,k,:))),squeeze(nanstd(FM_P(:,k,:)))/sqrt(size(FM_P,1)),'LineColor',Color{k},'ShadeColor',Color{k})
     hold on

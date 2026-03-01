@@ -1,4 +1,8 @@
 function jpsth(PairOfCells,ie_pairs,trigger,partition,wind,binSize)
+if nargin < 5
+    wind = [0,6];
+    binSize = 25;
+end
 isplotex = 0;
 
 %binSize = 25; % number of original bins to combine
@@ -10,8 +14,8 @@ ccgT  =  nan(73,W*2+1);
 InteractionCCGT  = nan(73,W*2+1);
 DiagT = nan(73,W);
 for pairs = 1:length(PairOfCells)
-cellid_a = PairOfCells{pairs,1}
-cellid_d = PairOfCells{pairs,2}
+cellid_a = PairOfCells{pairs,1};
+cellid_d = PairOfCells{pairs,2};
 
 [psth_a,spsth_a,~,tags,raszt_a] =  ultimate_psth(cellid_a,'trial',trigger,wind,'parts',partition);
 [psth_d,spsth_d,~,~,raszt_d] =  ultimate_psth(cellid_d,'trial',trigger,wind,'parts',partition);

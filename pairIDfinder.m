@@ -1,4 +1,8 @@
-function [crosspairs,ie_pairs] = pairIDfinder(i_ach,i_da,i_da_i)
+function [crosspairs,ie_pairs] = pairIDfinder(i_ach,i_da_i,i_da_e)
+if nargin < 3
+    i_da_e = [];
+end
+i_da = [i_da_i;i_da_e];
 loadcb
 RATID_a = getvalue('RatId',CELLIDLIST(i_ach))
 RATID_d = getvalue('RatId',CELLIDLIST(i_da))

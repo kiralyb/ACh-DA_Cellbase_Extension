@@ -1,5 +1,5 @@
-load('L:\_CellBases\ACh_DA_Cellbase\Population_maps\ALL_20220816\HDB\DATA.mat')
-%%
+function populationclust_elbow(area)
+load(['L:\_CellBases\ACh_DA_Cellbase\Population_maps\ALL_20220816',area,'\DATA.mat'])
 Zpsth = sortedZpsth;
 g.baselinelength=g.baselinelength/g.dt;
 margin=g.sigma*3;
@@ -34,7 +34,6 @@ end
 PCA2=[PCA2,PCA1(:,1:g.PCA_dim(f))]; % take the 1st x=PCA_dim principal components
 VAR=[VAR;VAR1(1:g.PCA_dim(f))]; % take the 1st x=PCA_dim principal components
 end
-%%
 
 % Total variance (around global mean)
 grandMean = mean(PCA2);

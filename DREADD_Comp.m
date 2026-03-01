@@ -9,7 +9,6 @@ figure
     errorshade(linspace(-2,3,ceil(60241/downsamplingrate)),squeeze(mean(M(type_animal==1,dreadd,parti,1:downsamplingrate:end))),squeeze(std(M(type_animal==1,dreadd,parti,1:downsamplingrate:end)))/sqrt(n_d),'LineColor',Color{parti,dreadd},'ShadeColor',Color{parti,dreadd},'LineStyle','-')
     end
     ylabel('Average dF/F')
-    xlabel(['Time from ','Stimulus',' (s)'])
     setmyplot_balazs
     xlim([-0,2])
     

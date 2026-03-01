@@ -1,5 +1,10 @@
-function [P,R]=noise_correlation(pairs,isdoublepart,isplot)
-
+function [P,R]=noise_correlation(pairs,isplot,isdoublepart)
+if nargin < 3
+   isplot = 1;
+end
+if nargin < 4
+   isdoublepart = 1; 
+end
 % load('L:\_CellBases\ACh_DA_Cellbase\CCG_new\all\stim_light_filter2\CCG_matrices.mat')
 % crosspairs=[];
 % 
@@ -22,7 +27,7 @@ ach_wind = [-0.0 0.4];
 da_wind = [0.0 0.4];
     
     %pairs = crosspairs;
-    for i = 1:length(pairs)
+    for i = 1:size(pairs,1)
         [psth_a,spsth_a,~,tags,raszt_a] =  ultimate_psth(pairs{i,1},'trial','StimulusOn',ach_wind,'parts','#Type','sigma',sigma_a);
         [psth_d,spsth_d,~,~,raszt_d] =  ultimate_psth(pairs{i,2},'trial','StimulusOn',da_wind,'parts','#Type','sigma',sigma_d);
         for tag_inx= 1: length(tags)
