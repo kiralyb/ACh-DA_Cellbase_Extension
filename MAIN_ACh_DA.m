@@ -1,396 +1,372 @@
-% initialization
+ function MAIN_ACh_DA
+%MAIN_ACH_DA Main wrapper for the figures presented in
+%   'Cholinergic–dopaminergic interplay underlies prediction error
+%   broadcasting' by Király et al. (2026)
+%
+%   The code performs:
+%       - Behavioral analyses in a psychometric task
+%       - Photometry analyses of ACh and DA release
+%       - Single unit analyses of HDB and VTA neurons
+%       - Signal correlation analyses of BFCNs and DANS in broadcastign RPE 
+%       - Change dynamics analyses of BFCNs and DANs during learning
+%       - Interaction analyses of BFCNs and DANs 
+%       - Optogenetic activation analyses of cross-BFCN-DAN effects 
+%       - Chemogenetic suppression analyses of BFCNs effect on learning & DA
+%
+%   Required datasets:
+%       - 'ACh_DA_FinalCellbase' (Single unit recordings from the HDB and VTA with optogenetical tagging of BFCNs and DANs)
+%       - 'ACh_DA_photometry' (ACh and DA release measured from the BLA and the VS)
+%       - 'ACh_DA_psychometric' (Chemogenetics supression of BFCNs with ACh (BLA) and DA (VS) release measurements)
+
+%   Bálint Király
+%   Division of Neurophysiology
+%   Medical University of Vienna
+%   balint.kiraly@meduniwien.ac.at
+%   23-Feb-2026
+
+
+%% Behavioral analysis in the psychometric learning task.
+% Figures 1c & S1
+%--------------------------------------------------------------------------
+
+% Initialization
 choosecb('ACh_DA_FinalCellbase')
-loadcb
-%getvalue()
-i_vta = find(~isnan([TheMatrix{:,25}]));
-i_hdb = find(~isnan([TheMatrix{:,24}]));
-i_da=find(abs([TheMatrix{:,25}])==4 | abs([TheMatrix{:,25}])==5);
-i_da_i=find(abs([TheMatrix{:,25}])==5);
-i_da_e=find(abs([TheMatrix{:,25}])==4);
-i_ach=find(abs([TheMatrix{:,24}])==5);
-i_da_tagged=i_vta([TheMatrix{i_vta,9}] < 0.01 & [TheMatrix{i_vta,12}] > 0.85);
-i_ach_tagged=i_hdb([TheMatrix{i_hdb,7}] < 0.01 & [TheMatrix{i_hdb,11}] > 0.85);
+MICEs = listtag('animal');
+LIST = listtag('session');
 
-stimmedAs_HDB = unique([TheMatrix{i_ach_tagged,3}])
-stimmedAs_VTA = unique([TheMatrix{i_da_tagged,3}])
-
-HDB_Clust = getvalue('HDB_Cluster_num');
-VTA_Clust = getvalue('VTA_Cluster_num');
-
-
-%% Behav
-choosecb('ACh_DA_FinalCellbase')
-MICEs = listtag('animal');MICEs([3])=[]; % !!!!
-
-% Fig1c
+% Psychometric learning curves
+% Fig 1c
 psychometric_curves(MICEs)
 
-% Sup1
-[Hit, FA, RT, Mstate,trialnum,newcuenum,newtrialnum] = psy_behav_runner(MICEs,0)
+% Fixed association performance
+% Fig S1a
+[~,~,~,~,~, newcuenum, newtrialnum] = psy_behav_runner(MICEs,0);
 
-% S1b
-[RatHit1,RatFA1,RATRT1,RATstate1,RATtrialnum1] = psy_behav_runner(MICEs,1);
-[RatHit2,RatFA2,RATRT2,RATstate2,RATtrialnum2] = psy_behav_runner(MICEs,2);
+% Fig S1b
+[MiceHit1, MiceFA1] = psy_behav_runner(MICEs,1);
+[MiceHit2, MiceFA2] = psy_behav_runner(MICEs,2);
 
-boxstat(cell2mat(RATRT1),cell2mat(RATRT2),'Parralel with new go tones','Parralel with new no-go tones',0.05,'paired')
-boxstat(cell2mat(RatHit1),cell2mat(RatHit2),'Parralel with new go tones','Parralel with new no-go tones',0.05,'paired')
-boxstat(cell2mat(RatFA1),cell2mat(RatFA2),'Parralel with new go tones','Parralel with new no-go tones',0.05,'paired')
+boxstat(cell2mat(MiceHit1),cell2mat(MiceHit2), ...
+    'Parralel with new go tones','Parralel with new no-go tones', ...
+    0.05,'paired')
 
-%S1c
+boxstat(cell2mat(MiceFA1),cell2mat(MiceFA2), ...
+    'Parralel with new go tones','Parralel with new no-go tones', ...
+    0.05,'paired')
+
+% New assocation formation rate
+% Fig S1c
 RTL = cell2mat(newtrialnum);
 RNC = cell2mat(newcuenum);
-RNC = RNC(RTL>100 & ~isnan(RNC));
-nanmean(RNC) + 1;
+RNC = RNC(RTL > 100 & ~isnan(RNC)); % only consider sufficiantly long sessions (>100 trials)
 figure
 histogram(RNC,'Normalization','CDF')
-setmyplot_balazs
 
-%S1d
-exampleID = LIST(200,:);
+% Responsivness in example session and on average 
+exampleID = {'VVH2','190608a'};
+% Fig S1d
 veiwresponsiveness(exampleID)
-
-%S1e
-viewlick(exampleID,'TriggerName','StimulusOn','SortEvent','TrialStart','eventtype','behav','ShowEvents','DeliverFeedback','Partitions','#Type3','window',[-2,3])
+ 
+% Fig S1e
+viewlick(exampleID,'TriggerName','StimulusOn','SortEvent','TrialStart',...
+    'eventtype','behav','ShowEvents','DeliverFeedback',...
+    'Partitions','#Type3','window',[-2,3])
 avg_viewlick(MICEs)
 
-%% Photometry
+%% Fiber photometry analyses of ACh and DA release during task completition.
+% Figures 1d–f, S3, S7a & 2i
+%--------------------------------------------------------------------------
+
+%Initialization
 choosecb('ACh_DA_photometry')
+
+% Example session with parallel ACh and DA release measurments 
 % Fig 1d
 figure
-viewphotometry('OAD16','220404','TriggerEvent','DeliverFeedback','Partitions','#Type','Signal',['dff_A']);
+viewphotometry('OAD16','220404','TriggerEvent','DeliverFeedback','Partitions','#Type4','Signal','dff_A');
 figure
-viewphotometry('OAD16','220404','TriggerEvent','DeliverFeedback','Partitions','#Type','Signal',['dff_D']);
+viewphotometry('OAD16','220404','TriggerEvent','DeliverFeedback','Partitions','#Type4','Signal','dff_D');
 
-% Fig 1e
+% Average ACh and DA release across animals and events 
+% Fig 1e - Cue aligned
 Photometry_GrandAVG('Soundtype','StimulusOn','A',1)
 Photometry_GrandAVG('Soundtype','StimulusOn','D',1)
 
-% Fig 1f
+% Fig 1f - Feedback aligned
 Photometry_GrandAVG('Type4','DeliverFeedback','A',1)
 Photometry_GrandAVG('Type4','DeliverFeedback','D',1)
 
-% Sup 3
-Photometry_GrandAVG('Soundtype','StimulusOn','s405_A')
-Photometry_GrandAVG('Soundtype','StimulusOn','s405_D')
-Photometry_GrandAVG('Soundtype','StimulusOn','s465_A')
-Photometry_GrandAVG('Soundtype','StimulusOn','s465_D') %file shitty 
+% Fig S3 - Ligand dependent and isosbestic signals
+Photometry_GrandAVG('Soundtype','StimulusOn','s405_A',0)
+Photometry_GrandAVG('Soundtype','StimulusOn','s405_D',0)
+Photometry_GrandAVG('Soundtype','StimulusOn','s465_A',0)
+Photometry_GrandAVG('Soundtype','StimulusOn','s465_D',0)
 
-% Sup 7a
+% Fig S7a - Correct rejection
 Photometry_GrandAVG('CorrectRejection','StimulusOn','dff_A',0)
 Photometry_GrandAVG('CorrectRejection','StimulusOn','dff_D',0)
 
+% Cross-correlograms of ACh and DA release during the task
 % Fig 2i
-load([getpref('cellbase','datapath'),'\CCG.mat'])
-load([getpref('cellbase','datapath'),'\CCG_DREADD.mat'])
-AVCCG = [Avg_CCG;Avg_CCG_DREADD];
-[MX,MI]= max(AVCCG,[],2)
-figure
-imagesc(lags/sr,1:size(AVCCG,1),AVCCG./MX)
-xlim([-6,6])
-caxis([-0.8,0.8]);
-yyaxis right
-plot(lags/sr,mean(AVCCG./MX),'r')
-xlim([-6,6])
-ylim([-1,1])
-setmyplot_balazs
-(mean(lags(MI)))/sr
-signrank(lags(MI))
+combined_CCG
 
+%% Analysis of HDB and VTA single unit activities.
+% Figure 1g-j, S4, S5, S7b, 4d & S10h
+%-------------------------------------------------
+% Initialization
+choosecb('ACh_DA_FinalCellbase')
+loadcb
 
-%% Ephys
-
-
-% Fig 1g
+% Example BFCN and DA neurons
+% Fig 1g - optogenetical tagging
 figure
 viewcell2b('VVH11_200924a_9.1','TriggerName','BurstOn','eventtype','stimb','window',[-0.2 0.5],'dt',0.001,'sigma',0.001)
 
-% Fig 1h
-exampleIDs={'VVH6_191112a_8.2','WHV1_191123a_8.1','VVH7_200320a_16.1'}
+% Fig 1h - feedback aligned
+exampleIDs={'VVH6_191112a_8.2','WHV1_191123a_8.1','VVH7_200320a_16.1'};
 for i = 1:length(exampleIDs)
-figure
-viewcell2b(exampleIDs{i},'TriggerName','DeliverFeedback','SortEvent','StimulusOn','ShowEvents','StimulusOn',...
-    'eventtype','behav','window',[-1 1],'Partitions','#Type4')
+    figure
+    viewcell2b(exampleIDs{i},'TriggerName','DeliverFeedback','SortEvent','StimulusOn','ShowEvents','StimulusOn',...
+        'eventtype','behav','window',[-1 1],'Partitions','#Type4')
 end
 
-% S4
-i_vta = find(~isnan([TheMatrix{:,25}]));
-i_hdb = find(~isnan([TheMatrix{:,24}]));
-i_da_tagged=i_vta([TheMatrix{i_vta,9}] < 0.01 & [TheMatrix{i_vta,12}] > 0.85);
-i_ach_tagged=i_hdb([TheMatrix{i_hdb,7}] < 0.01 & [TheMatrix{i_hdb,11}] > 0.85);
-stimmedAs_HDB = unique([TheMatrix{i_ach_tagged,3}])
-stimmedAs_VTA = unique([TheMatrix{i_da_tagged,3}])
+% Optogenetical tagging properties of BFCNs and DANs
+% Fig S4
+i_hdb = find(~isnan(getvalue('HDB_Cluster_num')));
+i_vta = find(~isnan(getvalue('VTA_Cluster_num')));
+i_da_tagged=i_vta(getvalue('Hindex_DA',CELLIDLIST(i_vta)) < 0.01 & getvalue('R_DA',CELLIDLIST(i_vta)) > 0.85);
+i_ach_tagged=i_hdb(getvalue('Hindex',CELLIDLIST(i_hdb)) < 0.01 & getvalue('R',CELLIDLIST(i_hdb)) > 0.85);
+stimmedAs_HDB = unique(getvalue('RatID',CELLIDLIST(i_ach_tagged)));
+stimmedAs_VTA = unique(getvalue('RatID',CELLIDLIST(i_da_tagged)));
 
-% S4b
-H_hdb_a = getvalue('Hindex',CELLIDLIST(i_hdb(ismember([TheMatrix{i_hdb,3}],stimmedAs_HDB))));
-H_hdb_d = getvalue('Hindex_DA',CELLIDLIST(i_hdb(ismember([TheMatrix{i_hdb,3}],stimmedAs_HDB))));
-H_vta_d = getvalue('Hindex_DA',CELLIDLIST(i_vta(ismember([TheMatrix{i_vta,3}],stimmedAs_VTA))));
-H_vta_a = getvalue('Hindex',CELLIDLIST(i_vta(ismember([TheMatrix{i_vta,3}],stimmedAs_VTA))));
-figure
-subplot(2,1,1)
-hold on
-h1 = histogram(H_hdb_d,'BinEdges',0:0.01:1, 'FaceColor', 'm', 'FaceAlpha', 0.25, 'EdgeColor', 'none');
-h2 = histogram(H_hdb_a,'BinEdges',0:0.01:1, 'FaceColor', 'c', 'FaceAlpha', 0.25, 'EdgeColor', 'none');
-setmyplot_balazs
-xlabel('H-index')
-ylabel('Count')
-subplot(2,1,2)
-hold on
-h1 = histogram(H_vta_d,'BinEdges',0:0.01:1, 'FaceColor', 'm', 'FaceAlpha', 0.25, 'EdgeColor', 'none');
-h2 = histogram(H_vta_a,'BinEdges',0:0.01:1, 'FaceColor', 'c', 'FaceAlpha', 0.25, 'EdgeColor', 'none');
-setmyplot_balazs
-xlabel('H-index')
-ylabel('Count')
+% S4b - H index
+H_hdb_a = getvalue('Hindex',CELLIDLIST(i_hdb(ismember(getvalue('RatID',CELLIDLIST(i_hdb)),stimmedAs_HDB))));
+H_hdb_d = getvalue('Hindex_DA',CELLIDLIST(i_hdb(ismember(getvalue('RatID',CELLIDLIST(i_hdb)),stimmedAs_HDB))));
+H_vta_d = getvalue('Hindex_DA',CELLIDLIST(i_vta(ismember(getvalue('RatID',CELLIDLIST(i_vta)),stimmedAs_VTA))));
+H_vta_a = getvalue('Hindex',CELLIDLIST(i_vta(ismember(getvalue('RatID',CELLIDLIST(i_vta)),stimmedAs_VTA))));
+combHhist(H_hdb_d,H_hdb_a)
+combHhist(H_vta_d,H_vta_a)
 
-% S4c
-histcdf_plotter(getvalue('LR_PC',CELLIDLIST([i_hdb,i_vta])),getvalue('LR_PC',CELLIDLIST([i_ach_tagged,i_da_tagged])),linspace(0,0.15,100));
+% S4c - L-ratio and ID
+histcdf_plotter(getvalue('LR_PC',CELLIDLIST([i_hdb;i_vta])),getvalue('LR_PC',CELLIDLIST([i_ach_tagged;i_da_tagged])),linspace(0,0.15,100));
 xlabel('L-ratio')
-histcdf_plotter(getvalue('ID_PC',CELLIDLIST([i_hdb,i_vta])),getvalue('ID_PC',CELLIDLIST([i_ach_tagged,i_da_tagged])),linspace(0,500,100));
+histcdf_plotter(getvalue('ID_PC',CELLIDLIST([i_hdb;i_vta])),getvalue('ID_PC',CELLIDLIST([i_ach_tagged;i_da_tagged])),linspace(0,500,100));
 xlabel('Isolation distance')
 
-% S4d
-ChAT_R_L_J(CELLIDLIST(i_ach_tagged),'tag') 
+% S4d - Latency and jitter
+ChAT_R_L_J(CELLIDLIST(i_ach_tagged),'tag')
 ChAT_R_L_J(CELLIDLIST(i_da_tagged),'tagb')
 
-% Sup 5
-auROC_analysis2
-auroc_k_elbow
+% Cluster analysis of PSTH characteristics during task execution
+% Fig S5
+populationclust_elbow('HDB')
+populationclust_elbow('VTA')
+i_da_i = find(abs(getvalue('VTA_Cluster_num')) == 5);
+i_da_e = find(abs(getvalue('VTA_Cluster_num')) == 4);
+i_da = [i_da_i;i_da_e];
+i_ach = find(abs(getvalue('HDB_Cluster_num')) == 5);
 
-% Fig 1i
-trigger = 'StimulusOn';
-partitions = '#Soundtype';
+% Average PSTHs and response latencies across neurons types and events
+% Fig 1i - Cue aligned
+cellgroups = {i_ach, i_da_i, i_da_e};
+window = [-0.5,0.5];
+baseline_window = [-0.5,-0.0];
 sigma = 0.02;
-wind = [-0.5,1.5];
-baslinewind=[-0.5,-0.0];
-respwind_a = [0,0.4];
-respwind_d = [0,0.4];
-time_res = 0.001;
-[P_ACh_SO,Latency_ACh_SO] = GAverage_PSTH(CELLIDLIST(i_ach),trigger,partitions,sigma,time_res,wind,baslinewind,respwind_a,1)
-[P_DA_i_SO,Latency_DA_i_SO] = GAverage_PSTH(CELLIDLIST(i_da_i),trigger,partitions,sigma,time_res,wind,baslinewind,respwind_d,1)
-[P_DA_e_SO,Latency_DA_e_SO] = GAverage_PSTH(CELLIDLIST(i_da_e),trigger,partitions,sigma,time_res,wind,baslinewind,respwind_d,1)
+Latency_SO = cell(1,length(cellgroups));
+for i_group = 1:length(cellgroups)
+    [Latency_SO{i_group}] = GAverage_PSTH(CELLIDLIST(cellgroups{i_group}),'StimulusOn','#Soundtype',sigma,window,baseline_window);
+end
 
-% Fig 1j
-trigger = 'DeliverFeedback';
-partitions = '#Type4';
-sigma = 0.01;
-wind = [-1,1];
-baslinewind=[-1,-0.6];
-respwind_a = [0,0.4];
-respwind_d = [0,0.4];
-time_res = 0.001;
-[p_ACh,~] = GAverage_PSTH(CELLIDLIST(i_ach),trigger,partitions,sigma,time_res,wind,baslinewind,respwind_a,1)
-[p_DA_i,~] = GAverage_PSTH(CELLIDLIST(i_da_i),trigger,partitions,sigma,time_res,wind,baslinewind,respwind_d,-1)
-[p_DA_e,~] = GAverage_PSTH(CELLIDLIST(i_da_e),trigger,partitions,sigma,time_res,wind,baslinewind,respwind_d,1)
+% Fig 1j - Feedback aligned
+window = [-0.5,0.5];
+baseline_window = [-0.5,-0.0];
+sigma = 0.02;
+for i_group = 1:length(cellgroups)
+    GAverage_PSTH(CELLIDLIST(cellgroups{i_group}),'DeliverFeedback','#Type4',sigma,window,baseline_window);
+end
 
-% Fig 4d
-latency_plot(Latency_ACh_SO(:,1),Latency_DA_i_SO(:,1),Latency_DA_e_SO(:,1))
+% Fig 4d - Punishment response latency
+boxstat3(Latency_SO{1}(:,1),Latency_SO{2}(:,1),Latency_SO{3}(:,1),{'ACh', 'DA_i' ,'DA_e'})
+Latency_ACh_FA = GAverage_PSTH(CELLIDLIST(i_ach),'DeliverFeedback','#FalseAlarm',sigma,window,baseline_window,1,0);
+Latency_DA_i_FA = GAverage_PSTH(CELLIDLIST(i_da_i),'DeliverFeedback','#FalseAlarm',sigma,window,baseline_window,-1,0);
+boxstat(Latency_ACh_FA(:,1),Latency_DA_i_FA(:,1),'ACh','DA_i');
 
-trigger = 'DeliverFeedback';
-[~,Latency_ACh_FA] = GAverage_PSTH(CELLIDLIST(i_ach),trigger,'FalseAlarm',sigma,time_res,wind,baslinewind,respwind_a,1,0)
-[~,Latency_DA_i_FA] = GAverage_PSTH(CELLIDLIST(i_da_i),trigger,'FalseAlarm',sigma,time_res,wind,baslinewind,respwind_d,-1,0)
-latency_plot(Latency_ACh_FA(:,1),Latency_DA_i_FA(:,1));
+% S10h - Reward response latency
+Latency_Hit = cell(1,length(cellgroups));
+for i_group = 1:length(cellgroups)
+    [Latency_Hit{i_group}] = GAverage_PSTH(CELLIDLIST(cellgroups{i_group}),'DeliverFeedback','#Hit',sigma,window,baseline_window);
+end
+boxstat3(Latency_Hit{1}(:,1),Latency_Hit{2}(:,1),Latency_Hit{3}(:,1),{'ACh', 'DA_i' ,'DA_e'})
 
-% S10h
-[~,Latency_ACh_Hit] = GAverage_PSTH(CELLIDLIST(i_ach),trigger,'Hit',sigma,time_res,wind,baslinewind,respwind_a,1,0)
-[~,Latency_DA_i_Hit] = GAverage_PSTH(CELLIDLIST(i_da_i),trigger,'Hit',sigma,time_res,wind,baslinewind,respwind_d,1,0)
-[~,Latency_DA_e_Hit] = GAverage_PSTH(CELLIDLIST(i_da_e),trigger,'Hit',sigma,time_res,wind,baslinewind,respwind_d,1,0)
-latency_plot(Latency_ACh_Hit(:,1),Latency_DA_i_Hit(:,1),Latency_DA_e_Hit(:,1))
+% S7b - Correct rejections
+for i_group = 1:length(cellgroups)
+    GAverage_PSTH(CELLIDLIST(cellgroups{i_group}),'DeliverFeedback','#CorrectRejection',0.01,[-1,0.5],[-1,-0.6]);
+end
 
-% S7b
-GAverage_PSTH(CELLIDLIST(i_ach),trigger,'#CorrectRejection',sigma,time_res,wind,baslinewind,respwind_a,1,0)
-GAverage_PSTH(CELLIDLIST(i_da_i),trigger,'#CorrectRejection',sigma,time_res,wind,baslinewind,respwind_d,1,0)
-GAverage_PSTH(CELLIDLIST(i_da_e),trigger,'#CorrectRejection',sigma,time_res,wind,baslinewind,respwind_d,1,0)
+%% Signal correlations of BFCNs and DANs in broadcasting RPE
+% Figures 2a-b & S6
+%-----------------------------------------------------------
 
-%% Signal Correlation
+% Initialization
+cellgroups = {i_ach, i_da, i_da_i, i_da_e};
+peakorthrough = [1,1,-1,1]; % (-1) indicate that Type 1 DANs are supressed by punishments 
+drifting = [];
 
-% Fig 2a, S6a
-drifting_ach = signal_correlation_Hz(i_ach);
-drifting_da = signal_correlation_Hz(i_da);
-drifting = [drifting_ach,drifting_da];
+% Task difficulty correlations
+% Fig 2a & S6a-b
+for i_group = 1:length(cellgroups)
+    d = signal_correlation_Hz(cellgroups{i_group});
+    drifting = [drifting,d];
+end
 
-% S6b
-signal_correlation_Hz(i_da_i);
-signal_correlation_Hz(i_da_e);
-
-% Fig 2b
+% Learning progress correlations
+% Fig 2b & S6c - Cue
 figure
-signal_correlation_pf(i_ach(~ismember(i_ach,drifting)),'cue',1)
-signal_correlation_pf(i_da(~ismember(i_da,drifting)),'cue',2)
+for i_group = 1:length(cellgroups)
+    signal_correlation_pf(setdiff(cellgroups{i_group}, drifting),'cue',i_group)
+end
 
-% S6c
-signal_correlation_pf(i_da_i(~ismember(i_da_i,drifting)),'cue',3)
-signal_correlation_pf(i_da_e(~ismember(i_da_e,drifting)),'cue',4)
-
-% S6d
+% Fig S6d - Reward
 figure
-signal_correlation_pf(i_ach(~ismember(i_ach,drifting)),'rewp',1)
-signal_correlation_pf(i_da(~ismember(i_da,drifting)),'rewp',2)
-signal_correlation_pf(i_da_i(~ismember(i_da_i,drifting)),'rewp',3)
-signal_correlation_pf(i_da_e(~ismember(i_da_e,drifting)),'rewp',4)
+for i_group = 1:length(cellgroups)
+    signal_correlation_pf(setdiff(cellgroups{i_group}, drifting),'rewp',i_group)
+end
 
-%S6e
+% Fig S6e - Punishment
 figure
-signal_correlation_pf(i_ach(~ismember(i_ach,drifting)),'pun',1)
-signal_correlation_pf(i_da(~ismember(i_da,drifting)),'pun',2)
-signal_correlation_pf(i_da_i(~ismember(i_da_i,drifting)),'pun',3,-1)
-signal_correlation_pf(i_da_e(~ismember(i_da_e,drifting)),'pun',4)
+for i_group = 1:length(cellgroups)
+    signal_correlation_pf(setdiff(cellgroups{i_group}, drifting),'pun',i_group,peakorthrough(i_group))
+end
 
-%S6f
+% Temporal aspects of RPE
+% Fig S6f - Reaction time
 figure
-signal_correlation_pf(i_ach(~ismember(i_ach,drifting)),'rewr',1)
-signal_correlation_pf(i_da(~ismember(i_da,drifting)),'rewr',2)
-signal_correlation_pf(i_da_i(~ismember(i_da_i,drifting)),'rewr',3)
-signal_correlation_pf(i_da_e(~ismember(i_da_e,drifting)),'rewr',4)
+for i_group = 1:length(cellgroups)
+    signal_correlation_pf(setdiff(cellgroups{i_group}, drifting),'rewr',i_group)
+end
 
-%S6g
+% Fig S6g - Reward delay
 figure
-signal_correlation_pf(i_ach(~ismember(i_ach,drifting)),'rewrn',1)
-signal_correlation_pf(i_da(~ismember(i_da,drifting)),'rewrn',2)
-signal_correlation_pf(i_da_i(~ismember(i_da_i,drifting)),'rewrn',3)
-signal_correlation_pf(i_da_e(~ismember(i_da_e,drifting)),'rewrn',4)
+for i_group = 1:length(cellgroups)
+    signal_correlation_pf(setdiff(cellgroups{i_group}, drifting),'rewrn',i_group)
+end
 
-%S6h
+% Fig S6h - Punishment delay 
 figure
-signal_correlation_pf(i_ach(~ismember(i_ach,drifting)),'punrn',1)
-signal_correlation_pf(i_da(~ismember(i_da,drifting)),'punrn',2)
-signal_correlation_pf(i_da_i(~ismember(i_da_i,drifting)),'punrn',3,-1)
-signal_correlation_pf(i_da_e(~ismember(i_da_e,drifting)),'punrn',4)
+for i_group = 1:length(cellgroups)
+    signal_correlation_pf(setdiff(cellgroups{i_group}, drifting),'punrn',i_group,peakorthrough(i_group))
+end
 
-%% Change Dynamics
-[crosspairs, ie_pairs] = pairIDfinder(i_ach,i_da,i_da_i);
+%% Change Dynamics of BFCN and DAN activity during learning
+% Figures 2c-f & S8a-e
+%-----------------------------------------------------------
+% Initialize list of simulatneously recorded BFCN-DAN pairs
+[crosspairs, ie_pairs] = pairIDfinder(i_ach,i_da_i,i_da_e); 
+
+% Example neurons' new cue responsivenes trends
 % Fig 2c
-changedyn(crosspairs(45,:),1)
+changedyn2({'VVH6_191127a_8.1' , 'VVH6_191127a_16.1' },1)
 
 % Fig S8a
-changedyn({'VVH6_191113a_1.2'},1)
-changedyn({'VVH11_200923a_9.2'},1)
-changedyn({'VVH11_201006a_9.1'},1)
+changedyn2({'VVH6_191113a_1.2'},1)
+changedyn2({'VVH11_200923a_9.2'},1)
+changedyn2({'VVH11_201006a_9.1'},1)
 
+% Logistic regression of new cue responses
 % Fig 2d
 for j =1:length(crosspairs)
-    [R_a(j), P_a(j),R_a_b(j), P_a_b(j),R_da(j), P_da(j), R_d_b(j), P_d_b(j),...
-        linparams_a(j,:),R2_a(j),p_a(j),linparams_da(j,:),R2_da(j),p_da(j),...
-        R_a_d(j), P_a_d(j),R_da_d(j), P_da_d(j),R_par(j,:,:),P_par(j,:,:),...
-        VAR(j),B(:,j),B_p(:,j),B_pc(:,j),Bd(:,j),Bd_p(:,j),Bc(:,j),Bc_p(:,j),...
-        trialnumber(j),linparams_cross(j,:),linparams_cross_reverse(j,:),R2_cross(j)...
-        ,R2_cross_reverse(j)] ...
-    = changedyn(crosspairs(j,:),0);
+    [B_ach(:,j),B_da(:,j),Bc(:,j)] = lin_reg_pair(crosspairs(j,:));
 end
+figure
+ax(1)=subplot(1,3,1);
+boxstat(B_ach,B_da,'ach','da',0.05,'paired',ax(1))
+ax(2)=subplot(1,3,2);
+boxstat(B_da,Bc,'da','combined',0.05,'paired',ax(2))
+ax(3)=subplot(1,3,3);
+boxstat(B_ach,Bc,'ach','combined',0.05,'paired',ax(3))
+linkaxes(ax, 'y')
 
+% Fig S8b
 figure
 for ie = 0:1
-    ax(1+3*ie)=subplot(2,3,1+3*ie)
-    boxstat(B(ie_pairs==ie),Bd(ie_pairs==ie),'ach','da',0.05,'paired',ax(1))
-    ylim([0.5,1])
-    ax(2+3*ie)=subplot(2,3,2+3*ie)
-    boxstat(Bd(ie_pairs==ie),Bc(ie_pairs==ie),'da','combined',0.05,'paired',ax(2))
-    ax(3+3*ie)=subplot(2,3,3+3*ie)
-    boxstat(B(ie_pairs==ie),Bc(ie_pairs==ie),'ach','combined',0.05,'paired',ax(3))
-    ylim([0.5,1])
-    linkaxes([ax], 'y')
+    ax(1+3*ie)=subplot(2,3,1+3*ie);
+    boxstat(B_ach(ie_pairs==ie),B_da(ie_pairs==ie),'ach','da',0.05,'paired',ax(1))
+    ax(2+3*ie)=subplot(2,3,2+3*ie);
+    boxstat(B_da(ie_pairs==ie),Bc(ie_pairs==ie),'da','combined',0.05,'paired',ax(2))
+    ax(3+3*ie)=subplot(2,3,3+3*ie);
+    boxstat(B_ach(ie_pairs==ie),Bc(ie_pairs==ie),'ach','combined',0.05,'paired',ax(3))
 end
+linkaxes(ax, 'y')
 
-figure
-    ax(1)=subplot(1,3,1)
-    boxstat(B,Bd,'ach','da',0.05,'paired',ax(1))
-    ax(2)=subplot(1,3,2)
-    boxstat(Bd,Bc,'da','combined',0.05,'paired',ax(2))
-    ax(3)=subplot(1,3,3)
-    boxstat(B,Bc,'ach','combined',0.05,'paired',ax(3))
-    linkaxes([ax], 'y')
-
-[dapairs, die_pairs] = pairIDfinder(i_da_e,i_da,i_da_i);
+% Fig 2d right
+dapairs = pairIDfinder(i_da_e,i_da_i); % find pairs across DA subtypes
 for j =1:length(dapairs)
-    [~, ~,~, ~,~, ~,~, ~,...
-        ~,~,~,~,~,~,...
-        ~,~,~,~,~,~,...
-        ~,~,~,~,~,~,Bc_DANS(:,j),~,...
-        ~,~,~,~...
-        ,~] ...
-    = changedyn(dapairs(j,:),0);
+    [~,~,Bc_DANS(:,j)] = lin_reg_pair(dapairs(j,:));
 end
 boxstat(Bc,Bc_DANS,'ACh+DA','T1-DAN + T2-DAN');
 
-% Fig 2f right
+% Correlations with behavioral trends
+for k = 1:length(i_ach)
+    [R_ach(k), R_ach_d(k), linparams_ach(k,:), R2_ach(k)] = changedyn2(CELLIDLIST(i_ach(k)),0);
+end
+for k = 1:length(i_da_i)
+    [R_da_i(k), R_da_i_d(k), linparams_da_i(k,:), R2_da_i(k)] = changedyn2(CELLIDLIST(i_da_i(k)),0);
+end
+for k = 1:length(i_da_e)
+    [R_da_e(k), R_da_e_d(k), linparams_da_e(k,:), R2_da_e(k)] = changedyn2(CELLIDLIST(i_da_e(k)),0);
+end
+
+% Fig S8c left - correlation of trends
+labels = {'ACh', 'DA_i' ,'DA_e'};
+boxstat3(R_ach,R_da_i,R_da_e,labels)
+ylabel('trend R')
+% Fig 2e - correlation of updates
+boxstat3(R_ach_d,R_da_i_d,R_da_e_d,labels)
+ylabel('Diff R')
+
+% Linear regression of behavioral responses with temporal shifts allowed
+% Fig 2f - temporal shift 
+boxstat3(linparams_ach(:,2),linparams_da_i(:,2),linparams_da_e(:,2),labels)
+ylabel('dt')
+signrank(linparams_ach(:,2),0.1)
+% Fig S8e - explanatory power
+boxstat3(R2_ach,R2_da_i,R2_da_e,labels)
+ylabel('R2')
+
+% Cross-system trend correlations
+% Fig 2f
+for j =1:length(crosspairs)
+    [~,~,~,~,R_par(j,:,:),linparams_cross(j,:),linparams_cross_reverse(j,:)] ...
+        = changedyn2(crosspairs(j,:),0);
+end
+
+% Fig 2f right - linear regression
 for i = 1:2
     boxstat(linparams_cross(ie_pairs==i-1,2),linparams_cross_reverse(ie_pairs==i-1,2),'ACh->DA','DA->ACh',0.05,'paired')
 end
 
-% S8c
-H=figure
-maximize_figure(H);
-H = subplot(1,6,1)
-boxstat(R_par(ie_pairs==0,1,3),R_par(ie_pairs==0,3,1),'ach','controlled_e',0.05,'paired',H)
-H = subplot(1,6,2)
-boxstat(R_par(ie_pairs==1,1,3),R_par(ie_pairs==1,3,1),'ach','controlled_i',0.05,'paired',H)
-H = subplot(1,6,3)
-boxstat(R_par(ie_pairs==1,2,3),R_par(ie_pairs==1,3,2),'da_i','controlled',0.05,'paired',H)
-H = subplot(1,6,4)
-boxstat(R_par(ie_pairs==0,2,3),R_par(ie_pairs==0,3,2),'da_e','controlled',0.05,'paired',H)
-H = subplot(1,6,5)
-boxstat(R_par(ie_pairs==0,1,2),R_par(ie_pairs==0,2,1),'ach_da_e','controlled',0.05,'paired',H)
-H = subplot(1,6,6)
-boxstat(R_par(ie_pairs==1,1,2),R_par(ie_pairs==1,2,1),'ach_da_i','controlled',0.05,'paired',H)
-
-% S8b right
+% Fig S8c right - correlation of new cue responses
 boxstat(R_par(ie_pairs==1,1,2),R_par(ie_pairs==0,1,2),'da_i','da_e')
 
-% Fig 2e
-inx = i_ach
-numcells = length(inx);
-j = 1;
-for k =1:numcells
-    try % ex k = 55, k = 39 81  (old 45) 
-    [R_ach(j), P_ach(j),R_ach_b(j),P_ach_b(j),~, ~,~, ~,linparams_ach(j,:),R2_ach(j),p_ach(j),~,~,~,R_ach_d(j),P_ach_d(j),~,~,~,~,var_ach(j),B_ach(j),B_p_ach(j),~,~,~,~,~,trialnum_ach(j)] = changedyn({CELLIDLIST{inx(k)}},0);
-    j = j + 1;
-    catch
-    k
-    end
-end
-
-inx = i_da_i;
-numcells = length(inx);
-j = 1;
-for k =1:numcells
-    try % k = 136
-    [R_da_i(j), P_da_i(j),R_da_i_b(j),P_da_i_b(j),~, ~,~, ~,linparams_da_i(j,:),R2_da_i(j),p_da_i(j),~,~,~,R_da_i_d(j),P_da_i_d(j),~,~,~,~,var_da_i(j),B_da_i(j),B_p_da_i(j),~,~,~,~,~,trialnum_da_i(j)] = changedyn({CELLIDLIST{inx(k)}},0);
-    j = j + 1;
-    end
-end
-
-inx = i_da_e;
-numcells = length(inx);
-j = 1;
-for k =1:numcells
-    try % k = 61k = 61
-    [R_da_e(j), P_da_e(j),R_da_e_b(j),P_da_e_b(j),~, ~,~, ~,linparams_da_e(j,:),R2_da_e(j),p_da_e(j),~,~,~,R_da_e_d(j),P_da_e_d(j),~,~,~,~,var_da_e(j),B_da_e(j),B_p_da_e(j),~,~,~,~,~,trialnum_da_e(j)] = changedyn({CELLIDLIST{inx(k)}},1);
-    j = j + 1;
-    end
-end
-
-% S8b left
-labels = {'ACh', 'DA_i' ,'DA_e'}
-boxstat3(R_ach,R_da_i,R_da_e,labels)
-ylabel('trend R')
-% Fig 2e
-boxstat3(R_ach_d,R_da_i_d,R_da_e_d,labels)
-ylabel('Diff R')
-
-% Fig 2f
-labels = {'ACh', 'DA_i' ,'DA_e'}
-boxstat3(linparams_ach(:,2),linparams_da_i(:,2),linparams_da_e(:,2),labels)
-signrank(linparams_ach(:,2),0.1)
-signrank(linparams_da_i(:,2),0.0)
-ylabel('dt')
-% S8d
-boxstat3(R2_ach,R2_da_i,R2_da_e,labels)
-ylabel('R2')
-
-%% Interaction
-% CCGs
-% F2g
+% Fig S8d - partial correlations
+boxstat(R_par(ie_pairs==0,1,3),R_par(ie_pairs==0,3,1),'ACh','DA_e controlled',0.05,'paired')
+boxstat(R_par(ie_pairs==1,1,3),R_par(ie_pairs==1,3,1),'ACh','DA_i controlled',0.05,'paired')
+boxstat(R_par(ie_pairs==1,2,3),R_par(ie_pairs==1,3,2),'DA_i','ACh controlled',0.05,'paired')
+boxstat(R_par(ie_pairs==0,2,3),R_par(ie_pairs==0,3,2),'DA_e','ACh controlled',0.05,'paired')
+boxstat(R_par(ie_pairs==0,1,2),R_par(ie_pairs==0,2,1),'AChxda_e','behav. controlled',0.05,'paired')
+boxstat(R_par(ie_pairs==1,1,2),R_par(ie_pairs==1,2,1),'AChxda_i','behav. controlled',0.05,'paired')
+%% Interactions between BFCNs and DANs
+% Figures 2g,j,k, 3a, S8e-g & S9-ab, 
+%-------------------------------------
+% Initialization
 path = [getpref('cellbase','datapath'),'CCG_final\'];
+
+% Crosscorrelograms(CCG)
+% Fig 2g BFCN-DA CCGs
 mkdir(path);
-ccg(crosspairs,0.5,'issave',false,'resdir',[path,'All'],'segfilter','@stim_excl_dual','filterinput',{'light_activation_duration',[0 1],'margins',[0,0]})
+if ~exist([path,'ALL\CCG_matrices.mat'],'file')
+    ccg(crosspairs,0.5,'issave',false,'resdir',[path,'All'],'segfilter','@stim_excl_dual','filterinput',{'light_activation_duration',[0 1],'margins',[0,0]})
+end
 CCG = CCG_normalizer([path,'ALL\CCG_matrices.mat']);
 figure
 subplot(1,2,1)
@@ -398,114 +374,95 @@ ccg_plot(CCG(ie_pairs == 0,:))
 subplot(1,2,2)
 ccg_plot(CCG(ie_pairs == 1,:))
 
-% F2h
-ccg(crosspairs,0.25,'issave',false,'resdir',[path,'Cue'],'segfilter','@cue_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
-ccg(crosspairs,0.25,'issave',false,'resdir',[path,'Hit'],'segfilter','@Hit_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
-ccg(crosspairs,0.25,'issave',false,'resdir',[path,'FA'],'segfilter','@FA_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
-
+% Fig 2h - event restricted BFCN-DA CCGs 
+if ~exist([path,'Cue\CCG_matrices.mat'],'file')
+    ccg(crosspairs,0.25,'issave',false,'resdir',[path,'Cue'],'segfilter','@cue_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
+    ccg(crosspairs,0.25,'issave',false,'resdir',[path,'Hit'],'segfilter','@Hit_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
+    ccg(crosspairs,0.25,'issave',false,'resdir',[path,'FA'],'segfilter','@FA_incl_nb','filterinput',{'margins',[0 0],'min_int',0},'minspikeno',5)
+end
 AVG_CCG_plot(path,ie_pairs)
 
-% F3a & % S9a-b
-
-if ~exist([path,'ISI\CCG_matrices.mat'])
-ccg(CELLIDLIST(~isnan(HDB_Clust)|~isnan(VTA_Clust)),...
-    0.5,'issave',false,'resdir',[path,'ISI'],'segfilter','@stimfb_excl_dual','filterinput',{'light_activation_duration',[0 1],'feedback_duration',[-0.6 0.6],'margins',[0 0]})
+% Fig 3a & S9a-b - CCG matrix of cell clusters
+HDB_Clust = abs(getvalue('HDB_Cluster_num'));
+VTA_Clust = abs(getvalue('VTA_Cluster_num'));
+if ~exist([path,'ISI\CCG_matrices.mat'],'file')
+    ccg(CELLIDLIST(~isnan(HDB_Clust)|~isnan(VTA_Clust)),0.5,'issave',false,'resdir',[path,'ISI'],...
+        'segfilter','@stimfb_excl_dual','filterinput',{'light_activation_duration',[0 1],'feedback_duration',[-0.6 0.6],'margins',[0 0]})
 end
 CCG_matrix_plotter(path,HDB_Clust,VTA_Clust);
 CCG_matrix_plotter(path,HDB_Clust,HDB_Clust);
 CCG_matrix_plotter(path,VTA_Clust,VTA_Clust);
 
-% F2h
-
-
-% JPSTH
-% S8e
-jpsth(crosspairs,ie_pairs,'StimulusOn','all',[0,0.6],25)
-% S8f
-jpsth(crosspairs,ie_pairs,'DeliverFeedback','#Hit',[0,0.6],25)
-% S8g
-jpsth(crosspairs,ie_pairs,'DeliverFeedback','#FalseAlarm',[0,0.6],25)
+% Joint PSTHs
+% Fig S8e - cue
+jpsth(crosspairs,ie_pairs,'StimulusOn','all')
+% Fig S8f - Reward
+jpsth(crosspairs,ie_pairs,'DeliverFeedback','#Hit')
+% Fig S8g - Punishment
+jpsth(crosspairs,ie_pairs,'DeliverFeedback','#FalseAlarm')
 
 % Noise correlation
-% Fig 2j
-noise_correlation(crosspairs(25),1,1) %ex25
-noise_correlation(crosspairs(29),1,1) %ex29
+% Fig 2j - examples
+noise_correlation({'VVH9_200622b_8.1','VVH9_200622b_9.1'})
+noise_correlation({'VVH6_191114a_3.1','VVH6_191114a_16.2'})
 
-% Fig 2k
-[PP,RR] = noise_correlation(crosspairs(ie_pairs==1,:),1,0) %ex25
-x=histogram(PP,0:0.05:1);
-PH(1,:) = x.Values;
-xx=histogram(RR(PP<0.05),-0.5:0.1:1);
-RH(1,:) = xx.Values;
-x=histogram(RR,-0.5:0.1:1);
-RH(2,:) = x.Values-RH(1,:);
-[PP,RR] = noise_correlation(crosspairs(ie_pairs==0,:),1,0)  % ex 29
-x=histogram(PP,0:0.05:1);
-PH(2,:) = x.Values;
-xx=histogram(RR(PP<0.05),-0.5:0.1:1);
-RH(3,:) = xx.Values;
-x=histogram(RR,-0.5:0.1:1);
-RH(4,:) = x.Values-RH(3,:);
+% Fig 2k - distribution
+noise_correlation_hist(crosspairs,ie_pairs);
 
-figure
-subplot(1,3,1)
-bar(0.025:0.05:(1-0.025),PH(1:2,:)','stacked')
-legend({'a - d_i','a - d_e'})
-setmyplot_balazs
-subplot(1,3,2)
-bar(-0.45:0.1:0.95,RH([1,3],:)','stacked')
-setmyplot_balazs
-subplot(1,3,3)
-bar(-0.45:0.1:0.95,RH([1:4],:)','stacked')
-xlim([-1,1])
-legend({'a - d_i','a - d_e'})
-setmyplot_balazs
+%% Cross-system effects of optogenetic activation
+% Figures 3c & S9c-d
+%------------------------------------------------
 
+% Fig 3c and S9c - BFCN stimulation
+optoPSTH_plot([5,3,5,4],[1,1,2,2],stimmedAs_HDB,{'c','y','m','r'},{'ACh','pBGABA','DA_i','DA_e'})
 
-%% Optogenetic activation
-miceID = getvalue('RatID')
-% Fig 3c and S9c
-colors={'c','y','m','r'}
-nums = [5,3,5,4]
-area = [1,1,2,2]
-figure
-hold on
-for i = 1:4
-    if area(i) == 1
-        IDS = CELLIDLIST(abs(HDB_Clust)==nums(i));
-        IDS = IDS(ismember(miceID(abs(HDB_Clust)==nums(i)),stimmedAs_HDB)); 
-    else
-        IDS = CELLIDLIST(abs(VTA_Clust)==nums(i));
-        IDS = IDS(ismember(miceID(abs(VTA_Clust)==nums(i)),stimmedAs_HDB));
+% Fig S9d - DAN stimulation
+optoPSTH_plot([6,5,3,1],[2,1,1,1],stimmedAs_VTA,{'m','c','y','k'},{'DA','ACh','pBGABA','BF1'})
+
+%% Chemogenetic supression of BFCNs
+% Figures 4 & S10
+%----------------------------------
+
+% Initialization
+choosecb('Cellbase_psychometric'); loadcb;
+AnimalIDs = CELLIDLIST;
+animal_group = getvalue('animal_group');
+ach_mask = getvalue('isBLA');
+da_mask = getvalue('isVS');
+
+% Behavioral effects
+% Fig 4b - First new association
+firstNovelBehav_DREADD(animal_group)
+
+%Psychometric learning curves
+% Fig 4c - Treated mice
+[DIFF_D] = psychometric_DREADD_COMP(AnimalIDs(animal_group==1),ones(1,sum(animal_group==1))*4);
+% S10c - Control mice
+[DIFF_C] = psychometric_DREADD_COMP(AnimalIDs(animal_group==0),ones(1,sum(animal_group==0))*4);
+% S10d - Difference
+boxstat(DIFF_C,DIFF_D,'control','dreadd')
+
+% Fixed associations
+% S10e 
+for i = 1:length(CELLIDLIST)
+    load([getpref('cellbase','datapath'),'\',AnimalIDs{i},'\',AnimalIDs{i},'.mat'],'Hit','FalseAlarm','RT','type_SO');    
+    for type = 1:2 % extract C21 (1) and Control (0) days
+    MHit(i,type) = mean(Hit(type_SO{1}==type-1));
+    MFA(i,type) = mean(FalseAlarm(type_SO{1}==type-1));
+    MRT(i,type) = mean(RT(type_SO{1}==type-1));
     end
-p(i) = optoPSTH(IDS,'stim',colors{i},i-1)
 end
-legend({'ACh','pGABA','DA_i','DA_e'})
+fix_DREADD_comp(MRT,animal_group)
+ylabel('Reaction time (s)')
+fix_DREADD_comp(MHit,animal_group)
+ylabel('Hit %')
+fix_DREADD_comp(MFA,animal_group)
+ylabel('FA %')
 
-% S9c
-IDS = CELLIDLIST(abs(VTA_Clust) == 4 | abs(VTA_Clust) == 5);
-IDS = IDS(ismember(miceID(abs(VTA_Clust) == 4 | abs(VTA_Clust) == 5),stimmedAs_VTA));
-figure
-pvta(1) = optoPSTH(IDS,'stimb',{'m'},1)
-legend({'DA'})
+% Effect of BFCN supression on neuromodulator release
+% Fig 4e, 4g, S10f - first new association
+firstnew_photometry_run(AnimalIDs,ach_mask,da_mask);
 
-% S9d
-colors={'c','y','k'}
-nums = [5,3,1]
-area = [1,1,1]
-figure
-hold on
-for i = 1:3
-    if area(i) == 1
-        IDS = CELLIDLIST(abs(HDB_Clust)==nums(i));
-        IDS = IDS(ismember(miceID(abs(HDB_Clust)==nums(i)),stimmedAs_VTA)); 
-    else
-        IDS = CELLIDLIST(abs(VTA_Clust)==nums(i));
-        IDS = IDS(ismember(miceID(abs(VTA_Clust)==nums(i)),stimmedAs_VTA));
-    end
-pvta(i + 1)=optoPSTH(IDS,'stimb',colors{i},i-1)
-end
-legend({'ACh','pHGABA','DA_i'})
+% 4f,h,i,j, S10g,i - long term
+dreadd_photometry_comp(AnimalIDs,ach_mask,da_mask);
 
-%% Chemogenetic supression
-DREADD
