@@ -1,8 +1,8 @@
-# ACh-DA_Cellbase_Extension
+# ACh-DA_CellBase_Extension
 Matlab analyses for cholinergic and dopaminergic single unit and fiber photometry recordings
 
 ## Description
-This repository contains MATLAB code for data analysis on the interactions and coded signal of the cholinergic and dopaminergic systems during associative learning. The figures and supplementary figures of 'Cholinergic–dopaminergic interplay underlies prediction error broadcasting' by Király et al. can be produced with the MAIN_ACH_DA function relying on three datasets (in CELLBASE data format, see https://github.com/hangyabalazs/CellBase) recorded from mice performing an auditory go/no-go task:
+This repository contains MATLAB code for data analysis on the interactions and coded signal of the cholinergic and dopaminergic systems during associative learning. The figures and supplementary figures of 'Cholinergic–dopaminergic interplay underlies prediction error broadcasting' by Király et al. can be produced with the MAIN_ACh_DA function relying on three datasets (in CellBase data format, see https://github.com/hangyabalazs/CellBase) recorded from mice performing an auditory go/no-go task:
 
   - Fiber photometry recordings of acetylcholine (ACh) and dopamine (DA) release from the basolateral amygdala (BLA) and the ventral stiatum (VS).
 
@@ -18,11 +18,11 @@ Data can be preprocessed with preproc_ACh_DA.m.
 
 ## Installation
 
-Move the .m files on your MATLAB path (should take around a few seconds). No further installation is needed, but Cellbase needs to be initilized (run initcb.m or mountcb.m). 
+Move the .m files on your MATLAB path (should take around a few seconds). No further installation is needed, but CellBase needs to be initilized (run initcb.m or mountcb.m). 
 
 ## Dependencies
 
-This code is an extension to CELLBASE (https://github.com/hangyabalazs/CellBase) and some parts use MClust3.5 (https://github.com/adredish/MClust-Spike-Sorting-Toolbox).
+This code is an extension to CellBase (https://github.com/hangyabalazs/CellBase) and some parts use MClust3.5 (https://github.com/adredish/MClust-Spike-Sorting-Toolbox).
 - MatlabR2021a (Signal Processing Toolbox, Statistics and Machine Learning Toolbox, System Identification Toolbox)
 
 ## System requirements
